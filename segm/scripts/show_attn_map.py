@@ -26,6 +26,7 @@ from torchvision import transforms
 @click.option("--cmap", default="viridis", type=str)
 @click.option("--enc/--dec", default=True, is_flag=True)
 @click.option("--cls/--patch", default=False, is_flag=True)
+@click.option("--gpu/--cpu", default=True, is_flag=True)
 def visualize(
     model_path,
     image_path,
@@ -36,12 +37,13 @@ def visualize(
     cmap,
     enc,
     cls,
+    gpu
 ):
 
     output_dir = Path(output_dir)
     model_dir = Path(model_path).parent
 
-    ptu.set_gpu_mode(True)
+    ptu.set_gpu_mode(gpu)
 
     # Build model
     model, variant = load_model(model_path)
