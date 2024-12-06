@@ -86,8 +86,6 @@ def main(model_path, input_dir, output_dir, gpu, legend):
             ax.imshow(np.array(pil_blend))
             ax.axis("off")
 
-            print(f"Image: {filename.name}", "Legend Mapping: ", label_to_color, "\n")
-
             # Create the legend
             handles = [
                 mpatches.Patch(color=np.array(color), label=label)
