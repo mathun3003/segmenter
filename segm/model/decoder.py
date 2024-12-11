@@ -81,20 +81,25 @@ class MaskTransformer(nn.Module):
         H, W = im_size
         GS = H // self.patch_size
 
-        x = self.proj_dec(x)
-        cls_emb = self.cls_emb.expand(x.size(0), -1, -1)
-        x = torch.cat((x, cls_emb), 1)
+        # project patch embeddings in decoder
+        x = self.proj_dec(x)  # [batch_size, number_of_tokens, embedding_dim]
+        # init class embeddings
+        cls_emb = self.cls_emb.expand(x.size(0), -1, -1)  # [batch_size, number_of_classes, embedding_dim]
+        # concat along token dimension
+        x = torch.cat((x, cls_emb), 1)  # [batch_size, number_of_tokens + number_of_classes, embedding_dim]
         for blk in self.blocks:
             x = blk(x)
         x = self.decoder_norm(x)
-
+        # decouple patches and segmentation features
+        # patches: [batch_size, number_of_tokens, embedding_dim], cls_seg_feat: [batch_size, number_of_classes, embedding_dim]
         patches, cls_seg_feat = x[:, : -self.n_cls], x[:, -self.n_cls :]
+        # linearly projected to common feature space
         patches = patches @ self.proj_patch
         cls_seg_feat = cls_seg_feat @ self.proj_classes
-
+        # normalize embeddings
         patches = patches / patches.norm(dim=-1, keepdim=True)
         cls_seg_feat = cls_seg_feat / cls_seg_feat.norm(dim=-1, keepdim=True)
-
+        # compute mask
         masks = patches @ cls_seg_feat.transpose(1, 2)
         masks = self.mask_norm(masks)
         masks = rearrange(masks, "b (h w) n -> b n h w", h=int(GS))
